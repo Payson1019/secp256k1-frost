@@ -45,32 +45,6 @@ __attribute__((visibility("default"))) int keygen_dkg_begin(secp256k1_frost_vss_
     if (result != 1) {
         return result; /* Early exit on failure */ 
     }
-    printf("params: generator_index: %d num_participants: %d threshold: %d\n", generator_index, num_participants, threshold);
-    int i;
-    for (i = 0; i < num_participants; i++)
-    {
-        printf("share ");
-        printf("generator_index: %d\n", shares[i].generator_index);
-        printf("receiver_index: %d\n", shares[i].receiver_index);
-        print_byte_array("value", shares[i].value, 32);
-        if (verify_secret_share(sign_verify_ctx, &shares[i], *dkg_commitment) == 0) {
-            printf("verify_secret_share for shares %d with commitments failed\n", i);
-        }
-        else {
-            printf("verify_secret_share for shares %d with commitments succeeded\n", i);
-        }
-    }
-    printf("commitment ");
-    printf("index: %d\n", (*dkg_commitment)->index);
-    printf("num_coefficients: %d\n", (*dkg_commitment)->num_coefficients);
-    for (i = 0; i < (*dkg_commitment)->num_coefficients; i++)
-    {
-        printf("coefficient_commitment %d ", i);
-        print_byte_array("data:", (*dkg_commitment)->coefficient_commitments[i].data, 64);
-    }
-    print_byte_array("zkp_r", (*dkg_commitment)->zkp_r, 64);
-    print_byte_array("zkp_z", (*dkg_commitment)->zkp_z, 32);
-    fflush(stdout);
     result = secp256k1_frost_keygen_dkg_commitment_validate(sign_verify_ctx, *dkg_commitment, context, context_length);
     if (result != 1) {
         secp256k1_context_destroy(sign_verify_ctx);
@@ -104,46 +78,6 @@ __attribute__((visibility("default"))) int keygen_dkg_finalize(secp256k1_frost_k
                                                                secp256k1_frost_vss_commitments **commitments) {
     secp256k1_context *sign_verify_ctx;
     sign_verify_ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-    if (sign_verify_ctx == NULL) {
-        printf("sign_verify_ctx is NULL\n");
-    } else if (keypair == NULL) {
-        printf("keypair is NULL\n");
-    } else if (shares == NULL) {
-        printf("shares is NULL\n");
-    } else if (commitments == NULL) {
-        printf("commitments is NULL\n");
-    }
-    printf("params: index: %d num_participants: %d\n", index, num_participants);
-    int i;
-    for (i = 0; i < num_participants; i++)
-    {
-        printf("share ");
-        printf("generator_index: %d\n", shares[i].generator_index);
-        printf("receiver_index: %d\n", shares[i].receiver_index);
-        print_byte_array("value", shares[i].value, 32);
-        printf("commitment ");
-        printf("index: %d\n", commitments[i]->index);
-        printf("num_coefficients: %d\n", commitments[i]->num_coefficients);
-        int j;
-        for (j = 0; j < commitments[i]->num_coefficients; j++)
-        {
-            printf("coefficient_commitment %d ", j);
-            print_byte_array("data:", commitments[i]->coefficient_commitments[j].data, 64);
-        }
-        print_byte_array("zkp_r", commitments[i]->zkp_r, 64);
-        print_byte_array("zkp_z", commitments[i]->zkp_z, 32);
-    }
-    uint32_t s_idx, c_idx;
-    for (s_idx = 0; s_idx < num_participants; s_idx++) {
-        for (c_idx = 0; c_idx < num_participants; c_idx++) {
-            if (shares[s_idx].generator_index == commitments[c_idx]->index) {
-                if (verify_secret_share(sign_verify_ctx, &shares[s_idx], commitments[c_idx]) == 0) {
-                    printf("verify_secret_share for shares %d with commitments %d failed\n", s_idx, c_idx);
-                }
-            }
-        }
-    }
-    fflush(stdout);
     int result;
     result = secp256k1_frost_keygen_dkg_finalize(sign_verify_ctx, keypair, index, num_participants, shares, commitments);
     if (result != 1) {
@@ -182,12 +116,9 @@ __attribute__((visibility("default"))) int create_nonce(secp256k1_frost_nonce** 
         secp256k1_context_destroy(sign_verify_ctx);
         return 0;
     }
-    printf("index: %d\n", keypair->public_keys.index);
     /* Create the nonce (the function already computes its commitment) */
     *nonce = secp256k1_frost_nonce_create(sign_verify_ctx,
                                                  keypair, binding_seed, hiding_seed);
-    printf("nonce commitment index: %d\n", (*nonce)->commitments.index);
-    printf("Size of secp256k1_frost_nonce: %zu\n", sizeof(secp256k1_frost_nonce));
     secp256k1_context_destroy(sign_verify_ctx);
     return 1;
 }
@@ -202,8 +133,6 @@ __attribute__((visibility("default"))) int tagged_sha256(unsigned char *msg_hash
     sign_verify_ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
     int result;
     result = secp256k1_tagged_sha256(sign_verify_ctx, msg_hash, tag, tag_length, msg, msg_length);
-    print_byte_array("msg_hash", msg_hash, 32);
-    fflush(stdout);
     if (result != 1) {
         secp256k1_context_destroy(sign_verify_ctx);
         return result; /* Early exit on failure */ 
@@ -219,37 +148,8 @@ __attribute__((visibility("default"))) int sign(secp256k1_frost_signature_share 
                                                 const secp256k1_frost_keypair *keypair,
                                                 secp256k1_frost_nonce *nonce,
                                                 secp256k1_frost_nonce_commitment *signing_commitments) {
-    printf("params: ");
-    print_byte_array("msg_hash", msg_hash, 32);
-    printf("num_signers: %d\n", num_signers);
-    printf("keypair ");
-    print_byte_array("secret", keypair->secret, 32);
-    printf("index: %d\n", keypair->public_keys.index);
-    printf("max_participants: %d\n", keypair->public_keys.max_participants);
-    print_byte_array("public_key", keypair->public_keys.public_key, 64);
-    print_byte_array("group_public_key", keypair->public_keys.group_public_key, 64);
-    printf("nonce ");
-    printf("used: %d\n", nonce->used);
-    print_byte_array("hiding", nonce->hiding, 64);
-    print_byte_array("binding", nonce->binding, 64);
-    printf("commitments ");
-    printf("index: %d\n", nonce->commitments.index);
-    print_byte_array("hiding", nonce->commitments.hiding, 64);
-    print_byte_array("binding", nonce->commitments.binding, 64);
-    uint32_t i;
-    for (i = 0; i < num_signers; i++)
-    {
-        printf("nonce commitment %d ", i);
-        printf("index: %d\n", signing_commitments[i].index);
-        print_byte_array("hiding", signing_commitments[i].hiding, 64);
-        print_byte_array("binding", signing_commitments[i].binding, 64);
-    }
     int result;
     result = secp256k1_frost_sign(signature_share, msg_hash, num_signers, keypair, nonce, signing_commitments);
-    printf("signature_share ");
-    printf("index: %d\n", signature_share->index);
-    print_byte_array("response", signature_share->response, 32);
-    fflush(stdout);
     if (result != 1) {
         return result; /* Early exit on failure */ 
     }
@@ -266,36 +166,11 @@ __attribute__((visibility("default"))) int aggregate(unsigned char *sig64,
                                                      uint32_t num_signers) {
     secp256k1_context *sign_verify_ctx;
     sign_verify_ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-    printf("params: num_signers: %d\n", num_signers);
-    print_byte_array("msg32", msg32, 32);
-    printf("keypair ");
-    print_byte_array("secret", keypair->secret, 32);
-    printf("public_keys ");
-    printf("index: %d\n", keypair->public_keys.index);
-    printf("max_participants: %d\n", keypair->public_keys.max_participants);
-    print_byte_array("public_key", keypair->public_keys.public_key, 64);
-    print_byte_array("group_public_key", keypair->public_keys.group_public_key, 64);
-    uint32_t i;
-    for (i = 0; i < num_signers; i++)
-    {
-        printf("public_keys %d ", i);
-        printf("index: %d\n", public_keys[i].index);
-        printf("max_participants: %d\n", public_keys[i].max_participants);
-        print_byte_array("public_key", public_keys[i].public_key, 64);
-        print_byte_array("group_public_key", public_keys[i].group_public_key, 64);
-        printf("commitments %d ", i);
-        printf("index: %d\n", commitments[i].index);
-        print_byte_array("hiding", commitments[i].hiding, 64);
-        print_byte_array("binding", commitments[i].binding, 64);
-    }
-    fflush(stdout);
     int result;
     result = secp256k1_frost_aggregate(sign_verify_ctx, sig64, msg32, keypair, public_keys, commitments, signature_shares, num_signers);
     if (result != 1) {
         return result; /* Early exit on failure */ 
     }
-    print_byte_array("msg32", msg32, 32);
-    print_byte_array("sig54", sig64, 64);
     result = secp256k1_frost_verify(sign_verify_ctx,
                                 sig64,
                                 msg32,
