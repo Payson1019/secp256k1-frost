@@ -353,6 +353,16 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_frost_verify(
         const secp256k1_frost_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4);
 
+/*
+ * Check if a FROST public key is odd.
+ *
+ * Returns 1 if the public key is odd, 0 if it is even.
+ * In: pubkey: pointer to an secp256k1_frost_pubkey.
+ */
+SECP256K1_API int secp256k1_frost_pubkey_is_odd(
+        const secp256k1_frost_pubkey *pubkey
+) SECP256K1_ARG_NONNULL(1);
+
 #ifdef __cplusplus
 }
 #endif

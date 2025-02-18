@@ -199,6 +199,13 @@ __attribute__((visibility("default"))) int verify(const unsigned char *sig64,
     return result;
 }
 
+/* This function check if the y coordinate of pubkey is odd */
+__attribute__((visibility("default"))) int is_pubkey_odd(const secp256k1_frost_pubkey *pubkey) {
+    int result;
+    result = secp256k1_frost_pubkey_is_odd(pubkey);
+    return result;
+}
+
 #define EXAMPLE_MAX_PARTICIPANTS 4
 #define EXAMPLE_MIN_PARTICIPANTS 2
 __attribute__((visibility("default"))) int perform_dkg_multisig() {

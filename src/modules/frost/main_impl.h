@@ -1482,4 +1482,19 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_frost_verify(
     return secp256k1_gej_eq(&(aggregated_signature.r), &rhs);
 }
 
+/* check if the y coordinate of pubkey is odd */
+SECP256K1_API int secp256k1_frost_pubkey_is_odd(
+        const secp256k1_frost_pubkey *pubkey) {
+    secp256k1_ge pubkey_ge;
+    secp256k1_gej pubkey_gej;
+
+    if (pubkey == NULL) {
+        return 0;
+    }
+    deserialize_point(&pubkey_gej, pubkey->group_public_key);
+    secp256k1_ge_set_gej_safe(&pubkey_ge, &pubkey_gej);
+    secp256k1_fe_normalize_var(&pubkey_ge.y);
+    return secp256k1_fe_is_odd(&pubkey_ge.y);
+}
+
 #endif /* SECP256K1_MODULE_FROST_MAIN_H */
